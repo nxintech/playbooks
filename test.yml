@@ -2,7 +2,9 @@
 - hosts: {{ hostname }}
   gather_facts: no
   remote_user: root
+  vars:
+    test: hello
   
   tasks:
-    - name: test
-      shell: echo {{ hostname }}
+  - name: test
+    shell: echo {{ hostname }} {{ test }}
