@@ -1,0 +1,8 @@
+---
+- hosts: {{ hostname }}
+  gather_facts: no
+  remote_user: root
+  
+  tasks:
+    - name: test
+      shell: echo {{ hostname }}
