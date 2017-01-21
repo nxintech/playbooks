@@ -1,5 +1,5 @@
 ---
-- hosts: {{ hostname }}
+- hosts: "{{ passin }}"
   gather_facts: no
   remote_user: root
   vars:
@@ -7,4 +7,4 @@
   
   tasks:
   - name: test
-    shell: echo {{ hostname }} {{ test }}
+    shell: echo {{ passin }} {{ test }}
