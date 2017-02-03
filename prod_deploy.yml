@@ -1,0 +1,39 @@
+---
+- hosts: "{{ hostname }}"
+  remote_user: root
+  gather_facts: false
+  vars:
+    packageUrl: "{{ package_url }}"
+    downloadPath: /tmp
+    deployPath: /data0/www
+    linkName: current
+
+  tasks:
+    - local_action: command date +%F-%H-%M-%S
+      register: date
+
+    - local_action: command basename {{ packageUrl }}
+      register: warName
+
+    - name: Stop tomcat
+      service: name=tomcat state=stopped
+
+    - name: Get build package
+      get_url: url={{ packageUrl }} dest=/{{ downloadPath }}/{{ warName.stdout }}
+
+    - name: Make dir
+      file: path={{ deployPath }}/{{ date.stdout }} state=directory owner=tomcat group=tomcat
+
+    - name: Unzip war file
+      unarchive: src=/{{ downloadPath }}/{{ warName.stdout }} dest={{ deployPath }}/{{ date.stdout }} copy=no mode=0755 owner=tomcat group=tomcat
+
+    - name: Link current to date
+      file: src={{ deployPath }}/{{ date.stdout }} dest={{ deployPath }}/{{ linkName }} state=link
+      notify: start tomcat    
+   
+    - name: Delete war file
+      file: path={{ downloadPath }}/{{ warName.stdout }} state=absent
+
+  handlers:
+    - name: start tomcat
+      service: name=tomcat state=started
