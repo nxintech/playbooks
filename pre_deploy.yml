@@ -26,6 +26,6 @@
     - name: Delete war file
       file: path={{ downloadPath }}/{{ warName }} state=absent
 
-    handlers:
-      - name: start tomcat
-        service: name=tomcat state=started
+  handlers:
+    - name: start tomcat
+      service: name=tomcat state=started
