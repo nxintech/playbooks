@@ -14,17 +14,17 @@
       register: warName
 
     - name: Stop tomcat
-      service: name=tomcat state=stoped
+      service: name=tomcat state=stopped
 
     - name: get build package
-      get_url: url={{ packageUrl }} dest=/{{ downloadPath }}/{{ warName }}
+      get_url: url={{ packageUrl }} dest=/{{ downloadPath }}/{{ warName.stdout }}
 
     - name: Unzip war file
-      unarchive: src=/{{ downloadPath }}/{{ warName }} dest={{ deployPath }}/{{ deployName }} copy=no mode=0755 owner=tomcat group=tomcat
+      unarchive: src=/{{ downloadPath }}/{{ warName.stdout }} dest={{ deployPath }}/{{ deployName }} copy=no mode=0755 owner=tomcat group=tomcat
       notify: start tomcat    
    
     - name: Delete war file
-      file: path={{ downloadPath }}/{{ warName }} state=absent
+      file: path={{ downloadPath }}/{{ warName.stdout }} state=absent
 
   handlers:
     - name: start tomcat
