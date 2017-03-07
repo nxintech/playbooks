@@ -28,7 +28,7 @@
       unarchive: src=/{{ downloadPath }}/{{ warName.stdout }} dest={{ deployPath }}/{{ date.stdout }} copy=no mode=0755 owner=tomcat group=tomcat
 
     - name: Link current to date
-      file: src={{ deployPath }}/{{ date.stdout }} dest={{ deployPath }}/{{ linkName }} state=link
+      file: src={{ deployPath }}/{{ date.stdout }} dest={{ deployPath }}/{{ linkName }} state=link owner=tomcat group=tomcat
       notify: start tomcat    
    
     - name: Delete war file
