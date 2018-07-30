@@ -10,6 +10,7 @@ We assume that
 - install mysql conf in /etc/mysql, and conf file name is `$port.cnf`
 - install mysql data in /data0/mysql
 - install mysql template file in /data0/mysql/tmp
+- install mysql socket as `/tmp/mysql_$port.sock`, and root login via socket
 - use user and group `mysql` to start instances
 
 you have make sure these dirs exist on server, the playbook will check these dirs.
