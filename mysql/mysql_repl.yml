@@ -1,11 +1,9 @@
 ---
 # MySQL replication init
-# usage
-# ansible-playbook mysql_repl.yml -e "master=mysql-5.6-master.test.zs slaves=mysql-5.6-slave.test.zs,mysql-5.6-recovery.test.zs ... port=9301"
-
 
 - hosts: "{{ master + ',' + slaves }}"
   gather_facts: yes
+  
   tasks:
     - local_action:
         module: pip
@@ -23,6 +21,9 @@
 
 - hosts: "{{ master }}"
   gather_facts: no
+  vars:
+    socket: "/tmp/mysql_{{ port }}.sock"
+    
   tasks:
     - name: add repl user
       mysql_user:
@@ -31,7 +32,7 @@
         host: "{{ lookup('dig', item) }}"
         login_user: root
         login_password: "{{ mysql_password }}"
-        login_unix_socket: "/tmp/mysql_{{ port }}.sock"
+        login_unix_socket: "{{ socket }}"
         priv: '*.*:replication slave,replication client'
         state: present
       loop: "{{ slaves.split(',') + [master] }}"
@@ -41,7 +42,7 @@
         mode: getmaster
         login_user: root
         login_password: "{{ mysql_password }}"
-        login_unix_socket: "/tmp/mysql_{{ port }}.sock"
+        login_unix_socket: "{{ socket }}"
       register: master_status
 
 
@@ -100,13 +101,12 @@
             login_unix_socket: "{{ socket }}"
             variable: read_only
             value: 0
-          when: "'recovery' not in inventory_hostname"
 
         - mysql_replication:
             mode: getslave
             login_user: root
             login_password: "{{ mysql_password }}"
-            login_unix_socket: "/tmp/mysql_{{ port }}.sock"
+            login_unix_socket: "{{ socket }}"
           register: status
   
         - debug: msg={{ status.Slave_IO_Running, status.Slave_SQL_Running }}
