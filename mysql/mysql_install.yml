@@ -1,7 +1,5 @@
 ---
-# install a new MySQL instance and start it
-# usage
-# ansible-playbook mysql_install.yml -e "hosts=mysql-5.6-master.test.zs,mysql-5.6-slave.test.zs port=9301 dbname=testdb"
+# install a MySQL instance and start it
 
 - hosts: "{{ hosts }}"
   gather_facts: no
