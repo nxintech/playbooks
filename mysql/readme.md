@@ -4,7 +4,9 @@ requires python3+ ansible 2.4+
 
 ## MySQL install
 
-We assume that
+before install
+
+a. we assume that
 - you have installed mysql in /usr/local/mysql
 - running multiple MySQL instances on one machine via different ports
 - install mysql conf as `/etc/mysql/$port.cnf`
@@ -13,9 +15,9 @@ We assume that
 - install mysql socket as `/tmp/mysql_$port.sock`, and root login via socket
 - use user and group `mysql` to start instances
 
-you have make sure these dirs exist on server, the playbook will check these dirs.
+You have make sure these dirs exist on server, the playbook will check these dirs.
  
-And we assume the MySQL server configuration as followings.
+b. and we assume the MySQL server configuration as followings.
 - 32 CPU core
 - 256G Memory
 - SSD storage with 20000 IOPS in 16K page size
