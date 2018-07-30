@@ -7,7 +7,7 @@ requires python3+ ansible 2.4+
 We assume that
 - you have installed mysql in /usr/local/mysql
 - running multiple MySQL instances on one machine via different ports
-- install mysql conf in /etc/mysql, and conf file name is `$port.cnf`
+- install mysql conf as `/etc/mysql/$port.cnf`
 - install mysql data in /data0/mysql
 - install mysql template file in /data0/mysql/tmp
 - install mysql socket as `/tmp/mysql_$port.sock`, and root login via socket
