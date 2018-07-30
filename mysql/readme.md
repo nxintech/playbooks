@@ -16,6 +16,7 @@ a. we assume that
 - use user and group `mysql` to start instances
 
 You have make sure these dirs exist on server, the playbook will check these dirs.
+If you want install in different dirs, modify vars in `mysqk_install.yml`
  
 b. and we assume the MySQL server configuration as followings.
 - 32 CPU core
