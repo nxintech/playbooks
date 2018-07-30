@@ -25,10 +25,10 @@ b. and we assume the MySQL server configuration as followings.
 If your machine dose not match this configuration, you should tune the variables in template according to your server.
 template is `roles/mysql/templates/mysql_config.j2`.
 
+---
+install  mysql instance
 
-
-
-install mysql instance on hosts, please modify default password in `inventory.ini` before install 
+please modify default password in `inventory.ini` before install 
 ```console
 ansible-playbook mysql_install.yml -e 'hosts=mysql1.example.host,mysql2.example.host,mysql3.example.host port=3306 dbname=mydb'
 ```
