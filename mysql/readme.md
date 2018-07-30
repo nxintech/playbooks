@@ -25,6 +25,8 @@ b. and we assume the MySQL server configuration as followings.
 If your machine dose not match this configuration, you should tune the variables in template according to your server.
 template is `roles/mysql/templates/mysql_config.j2`.
 
+Plase note this playbook only support MySQL version 5.6+ or 5.7+.
+
 ---
 install  mysql instance
 
@@ -34,6 +36,13 @@ ansible-playbook mysql_install.yml -e 'hosts=mysql1.example.host,mysql2.example.
 ```
 
 ## Replication
+
+we assume that
+- use gtid
+- use semi_sync
+- use parallel replication on 5.7
+
+set up master slave replacation, please modify default password in `inventory.ini` before install 
 ```console
 ansible-playbook mysql_repl.yml -e 'master=mysql1.example.host slaves=mysql2.example.host,mysql3.example.host port=3306'
 ```
