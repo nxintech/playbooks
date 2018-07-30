@@ -1,0 +1,38 @@
+---
+- name: create init file
+  template:
+    src: init_file.j2
+    dest: /tmp/init_file
+
+- name: init and start mysql instance {{ port }} on {{ inventory_hostname }}
+  block:
+    - name: get init mysqld args
+      mysql_config_parser:
+        path: "{{ config }}"
+        section: mysqld
+      register: init_args
+
+    - name: get start mysqld args
+      mysql_config_parser:
+        path: "{{ config }}"
+        section: "mysqld{{ port }}"
+      register: start_args
+
+    - name: create instance {{ port }} datadir {{data_dir}}
+      shell: "{{ mysql_home }}/bin/mysqld --initialize-insecure --basedir={{ mysql_home }} --init-file=/tmp/init_file {{ init_args.stdout }}"
+
+    - name: start instance {{ port }}
+      shell: "{{ mysql_home }}/bin/mysqld --daemonize {{ start_args.stdout }}"
+
+    - name: create database
+      shell: "{{ mysql_home }}/bin/mysql -uroot -S /tmp/mysql_{{ port }}.sock -p{{mysql_password}} -Ne 'create database {{ dbname }}'"
+
+  rescue:
+    - name: clean mysql instance files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ data_dir }}"
+        - "{{ config }}"
+        - /tmp/init_file

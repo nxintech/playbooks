@@ -1,0 +1,14 @@
+---
+- name: include_tasks tasks/mysql_create_config.yml
+  include_tasks: tasks/mysql_create_config.yml
+  tags: install
+  vars:
+    config: "{{ mysql_conf_home }}/{{ port }}.cnf"
+    data_dir: "{{ mysql_data_home }}/{{ port }}_{{ dbname }}"
+
+- name: include_tasks tasks/mysql_install_{{ mysql_version }}.yml
+  include_tasks: "tasks/mysql_install_{{ mysql_version }}.yml"
+  tags: install
+  vars:
+    config: "{{ mysql_conf_home }}/{{ port }}.cnf"
+    data_dir: "{{ mysql_data_home }}/{{ port }}_{{ dbname }}"

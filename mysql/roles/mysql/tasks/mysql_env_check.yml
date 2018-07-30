@@ -1,0 +1,45 @@
+---
+- name: check mysql group
+  group:
+    name: mysql
+    state: present
+
+- name: check mysql user
+  user:
+    name: mysql
+    group: mysql
+    state: present
+
+- name: check dir exist
+  stat: path={{ item }}
+  loop:
+    - "{{ mysql_home }}"
+    - "{{ mysql_conf_home }}"
+    - "{{ mysql_data_home }}"
+    - "{{ mysql_data_home }}/tmp"
+  register: dir_st
+
+# https://github.com/ansible/ansible/issues/35890
+# can not use meta: end_play
+- name: check dir exist | failed
+  debug:
+    msg: "{{ item.item }}"
+  loop: "{{ dir_st.results }}"
+  failed_when: not item.stat.exists
+
+- name: check {{ mysql_data_home }}/tmp owner
+  file:
+    path: "{{ mysql_data_home }}/tmp"
+    owner: mysql
+    group: mysql 
+
+- name: check mysql config {{ mysql_conf_home }}/{{ port }}.cnf exists
+  stat: path={{ mysql_conf_home }}/{{ port }}.cnf
+  register: conf_st
+  failed_when: conf_st.stat.exists
+
+- name: check mysql binary {{ mysql_home }}/bin/mysqld exists
+  stat: path={{ mysql_home }}/bin/mysqld
+  register: mysqld_st
+  failed_when: not mysqld_st.stat.exists
+

@@ -1,0 +1,18 @@
+---
+# install a new MySQL instance and start it
+# usage
+# ansible-playbook mysql_install.yml -e "hosts=mysql-5.6-master.test.zs,mysql-5.6-slave.test.zs port=9301 dbname=testdb"
+
+- hosts: "{{ hosts }}"
+  gather_facts: no
+  vars:
+    mysql_home: /usr/local/mysql
+    mysql_conf_home: /etc/mysql
+    mysql_data_home: /data0/mysql
+
+  pre_tasks:
+    - import_tasks: roles/mysql/tasks/mysql_env_check.yml
+    - import_tasks: roles/mysql/tasks/mysql_version.yml
+
+  roles:
+    - { role: mysql }

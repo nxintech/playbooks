@@ -1,0 +1,128 @@
+---
+# MySQL replication init
+# usage
+# ansible-playbook mysql_repl.yml -e "master=mysql-5.6-master.test.zs slaves=mysql-5.6-slave.test.zs,mysql-5.6-recovery.test.zs ... port=9301"
+
+
+- hosts: "{{ master + ',' + slaves }}"
+  gather_facts: yes
+  tasks:
+    - local_action:
+        module: pip
+        name: dnspython
+
+    - shell: yum -y install mariadb-devel
+      when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+    - shell: yum -y install mysql-devel
+      when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "6"
+
+    - pip:
+        name: mysqlclient
+
+
+- hosts: "{{ master }}"
+  gather_facts: no
+  tasks:
+    - name: add repl user
+      mysql_user:
+        name: "{{ repl_user }}"
+        password: "{{ repl_password }}"
+        host: "{{ lookup('dig', item) }}"
+        login_user: root
+        login_password: "{{ mysql_password }}"
+        login_unix_socket: "/tmp/mysql_{{ port }}.sock"
+        priv: '*.*:replication slave,replication client'
+        state: present
+      loop: "{{ slaves.split(',') + [master] }}"
+
+    - name: get master gtid
+      mysql_replication:
+        mode: getmaster
+        login_user: root
+        login_password: "{{ mysql_password }}"
+        login_unix_socket: "/tmp/mysql_{{ port }}.sock"
+      register: master_status
+
+
+- hosts: "{{ slaves }}"
+  gather_facts: no
+  vars:
+    socket: "/tmp/mysql_{{ port }}.sock"
+    gtid: "{{ hostvars[master]['master_status']['Executed_Gtid_Set'] }}"
+
+  pre_tasks:
+    - import_tasks: roles/mysql/tasks/mysql_repl_check.yml
+
+  tasks:
+    - template:
+        src: roles/mysql/templates/slave.sql
+        dest: /tmp/slave.sql
+
+    - file:
+        src: /usr/local/mysql/bin/mysql
+        dest: /usr/local/bin/mysql
+        state: link
+
+    - name: do repl
+      block:
+        - name: purge master gtid
+          mysql_db:
+            login_user: root
+            login_password: "{{ mysql_password }}"
+            login_unix_socket: "{{ socket }}"
+            state: import
+            name: all
+            target: /tmp/slave.sql
+
+        - mysql_replication:
+            mode: changemaster
+            login_user: root
+            login_password: "{{ mysql_password }}"
+            login_unix_socket: "{{ socket }}"
+            master_host: "{{ lookup('dig', master) }}"
+            master_port: "{{ port }}"
+            master_user: "{{ repl_user }}"
+            master_password: "{{ repl_password }}"
+            master_auto_position: true
+  
+        - name: start slave
+          mysql_replication:
+            mode: startslave
+            login_user: root
+            login_password: "{{ mysql_password }}"
+            login_unix_socket: "{{ socket }}"
+
+        - name: set read only
+          mysql_variables:
+            login_user: root
+            login_password: "{{ mysql_password }}"
+            login_unix_socket: "{{ socket }}"
+            variable: read_only
+            value: 0
+          when: "'recovery' not in inventory_hostname"
+
+        - mysql_replication:
+            mode: getslave
+            login_user: root
+            login_password: "{{ mysql_password }}"
+            login_unix_socket: "/tmp/mysql_{{ port }}.sock"
+          register: status
+  
+        - debug: msg={{ status.Slave_IO_Running, status.Slave_SQL_Running }}
+
+      rescue:
+        - name: stop slave
+          mysql_replication:
+            mode: stopslave
+            login_user: root
+            login_password: "{{ mysql_password }}"
+            login_unix_socket: "{{ socket }}"
+  
+        - mysql_variables:
+            login_user: root
+            login_password: "{{ mysql_password }}"
+            login_unix_socket: "{{ socket }}"
+            variable: read_only
+            value: 0
+          when: "'recovery' not in inventory_hostname"

@@ -1,0 +1,21 @@
+---
+- name: create mysql config
+  block:
+    - name: get serverid
+      set_fact:
+        serverid: "{{ 100000000 | random }}"
+
+    - name: get env
+      set_fact:
+        env: "{% if inventory_hostname in groups['mysql_prod'] %}prod{% endif %}"
+
+    - name: create config {{ config }}
+      template:
+        src: mysql_config.j2
+        dest: "{{ config }}"
+  rescue:
+    - name: clean {{ config }}
+      file:
+        path: "{{ config }}"
+        state: absent
+    - meta: end_play

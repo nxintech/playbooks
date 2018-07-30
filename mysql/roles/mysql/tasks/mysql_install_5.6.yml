@@ -1,0 +1,41 @@
+---
+- name: init and start mysql instance {{ port }} on {{ inventory_hostname }}
+  block:
+    - name: init instance {{ port }} datadir {{data_dir}}
+      shell: "{{ mysql_home }}/scripts/mysql_install_db --user=mysql --defaults-file={{ config }} --basedir=/usr/local/mysql --datadir={{ data_dir }}"
+
+    - name: get start mysqld args
+      mysql_config_parser:
+        path: "{{ config }}"
+        section: "mysqld{{ port }}"
+      register: start_args
+
+    - name: start instance {{ port }}
+      # shell 模块使用  subprocess.Popen 执行命令，见
+      # https://github.com/ansible/ansible/blob/devel/lib/ansible/module_utils/basic.py#L2850
+      # 如果命令是 command & 的方式执行，那么前台会立刻结束并且返回 0， ansible 会关闭 stdout 和 stderr
+      # 而后台命令还没有执行完，stdout 和 stderr 过早关闭会导致后台进程错误
+      # 这里把 command & 改写成 (command &) && sleep 5 确保后台进程可以正确执行
+      shell: "({{ mysql_home }}/bin/mysqld {{ start_args.stdout }} &) && sleep 10"
+
+    - name: initialize passwd
+      shell: "export MYSQL_PWD=''; {{ mysql_home }}/bin/mysqladmin -uroot -S /tmp/mysql_{{port}}.sock password {{ mysql_password }}"
+
+    - name: create database
+      shell: "{{ mysql_home }}/bin/mysql -uroot -S /tmp/mysql_{{ port }}.sock -p{{mysql_password}} -Ne 'create database {{ dbname }}'"
+
+  rescue:
+    - name: clean mysql instance files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ data_dir }}"
+        - "{{ config }}"
+
+- name: drop user empty
+  shell: "{{ mysql_home }}/bin/mysql -uroot -S /tmp/mysql_{{ port }}.sock -p{{mysql_password}} -Ne '{{ item }}'"
+  loop:
+    - "drop user ``@`localhost`;"
+    - "drop user ``@`{{ inventory_hostname }}`;"
+    - "drop user `root`@`{{ inventory_hostname }}`;"

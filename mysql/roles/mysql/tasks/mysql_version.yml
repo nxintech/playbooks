@@ -1,0 +1,5 @@
+- shell: "{{ mysql_home }}/bin/mysqld --version"
+  register: mysql_rz
+
+- set_fact:
+    mysql_version: "{{ mysql_rz.stdout | regex_replace('^.*(\\d+).(\\d+).(\\d+).*$', '\\1.\\2')}}"
