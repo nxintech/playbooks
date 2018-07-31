@@ -7,11 +7,8 @@ user = mysql
 innodb_page_size = 16384
 datadir = {{ data_dir }}
 innodb_undo_tablespaces = 3
-{% if env == 'prod' %}
 innodb_buffer_pool_size = 2G
-{% else %}
-innodb_buffer_pool_size = 256M
-{% endif %}
+
 
 [mysqld{{port}}]
 # basic settings
@@ -73,11 +70,7 @@ log_slave_updates = 1
 
 # innodb settings
 innodb_page_size = 16384
-{% if env == 'prod' %}
 innodb_buffer_pool_size = 2G
-{% else %}
-innodb_buffer_pool_size = 256M
-{% endif %}
 innodb_buffer_pool_instances = 16
 innodb_buffer_pool_load_at_startup = 1
 innodb_buffer_pool_dump_at_shutdown = 1
@@ -121,8 +114,11 @@ gtid_mode = on
 enforce_gtid_consistency = 1
 binlog_format = ROW
 binlog_rows_query_log_events = 1
+{% if mysql_version == '5.6' or mysql_version == '5.7' %}
 expire_logs_days = 15
-# binlog_expire_logs_seconds MySQL 8.01
+{% else mysql_version >= '8.01' %}
+binlog_expire_logs_seconds = 0
+{% endif %}
 relay_log = relay.log
 relay_log_recovery = 1
 slave_skip_errors = ddl_exist_errors
