@@ -1,0 +1,22 @@
+---
+
+# usage ansible-playbook mysql_recovery.yml -e "master=master.host"
+
+- hosts: "{{ master }}"
+  gather_facts: no
+  vars:
+    backup_dir: "/data0/backup/{{ port }}"
+    socket: "/tmp/mysql_{{ port }}.sock"
+
+  tasks:
+    - stat:
+        path: /usr/bin/mydumper
+      register: dumper
+
+    - name: install mydumper
+      import_tasks: roles/tools/tasks/install_mydumper.yml
+      when: dumper.stat.executable == False
+
+    - name: backup master data by mydumper
+      shell: "mydumper -S {{ socket }} --triggers --events  --routines -c --regex '^(?!(test|information_schema|performance_schema|sys))' -o {{ backup_dir }}"
+

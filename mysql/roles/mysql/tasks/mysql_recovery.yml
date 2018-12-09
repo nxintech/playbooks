@@ -1,0 +1,20 @@
+---
+
+# usage ansible-playbook mysql_recovery.yml -e "master=master.host slave=slave.host port=port"
+
+- hosts: "{{ slave }}"
+  gather_facts: no
+  vars:
+    backup_dir: "/data0/backup/{{ port }}"
+    socket: "/tmp/mysql_{{ port }}.sock"
+
+  tasks:
+
+    - name: copy backup from master
+      synchronize:
+        src: "{{ backup_dir }}"
+        dest: "{{ backup_dir }}"
+      delegate_to: "{{ master }}"
+
+    - name: load backup to slave
+      shell: "myloader -u root -S {{ socket }} -d {{ backup_dir }} -o"

@@ -1,0 +1,69 @@
+---
+
+# usage ansible-playbook mysql_rebuild_repl.yml -e "master=master.host slave=slave.host port=port"
+
+- hosts: "{{ slave }}"
+  gather_facts: no
+  vars:
+    backup_dir: "/data0/backup/{{port}}"
+    socket: "/tmp/mysql_{{ port }}.sock"
+    config_file: "/etc/mysql/{{ port }}.cnf"
+
+  tasks:
+    - name: do backup on master
+      import_tasks: roles/tools/tasks/mysql_backup.yml
+
+    - name: reload backup on slave
+      import_tasks: roles/tools/tasks/mysql_recovery.yml
+
+    - name: grep binlog file and binlog pos
+      shell: "grep -P '(Log|Pos)' {{ backup_dir }}/metadata | head -2|awk '{print $2}'"
+      register: file_pos # file_pos.stdout = mysql-bin.000002\n897315
+
+    - name: stop slave
+      mysql_replication:
+        mode: stopslave
+        login_user: root
+        login_password: "{{ mysql_password }}"
+        login_unix_socket: "{{ socket }}"
+        config_file: "{{ config_file }}"
+
+    - name: change master auto postion 0
+      mysql_repl:
+        mode: changemaster
+        login_user: root
+        login_password: "{{ mysql_password }}"
+        login_unix_socket: "{{ socket }}"
+        config_file: "{{ config_file }}"
+
+    - name: change slave to master
+      mysql_replication:
+        mode: changemaster
+        login_user: root
+        login_password: "{{ mysql_password }}"
+        login_unix_socket: "{{ socket }}"
+        master_host: "{{ lookup('dig', master) }}"
+        master_port: "{{ port }}"
+        master_user: "{{ repl_user }}"
+        master_password: "{{ repl_password }}"
+        master_log_file: "{{ file_pos.stdout_lines[0] }}"
+        master_log_pos: "{{ file_pos.stdout_lines[1] }}"
+        config_file: "{{ config_file }}"
+
+    - name: start slave
+      mysql_replication:
+        mode: startslave
+        login_user: root
+        login_password: "{{ mysql_password }}"
+        login_unix_socket: "{{ socket }}"
+        config_file: "{{ config_file }}"
+
+    - mysql_replication:
+        mode: getslave
+        login_user: root
+        login_password: "{{ mysql_password }}"
+        login_unix_socket: "{{ socket }}"
+        config_file: "{{ config_file }}"
+      register: status
+
+    - debug: msg={{ status.Slave_IO_Running, status.Slave_SQL_Running }}

@@ -1,0 +1,9 @@
+
+
+
+- name: install the mydumper rpm
+  yum:
+    name: "https://github.com/maxbube/mydumper/releases/download/v0.9.5/mydumper-0.9.5-2.el{{ ansible_distribution_major_version }}.x86_64.rpm"
+    state: present
+    when: ansible_distribution == "CentOS"
+
