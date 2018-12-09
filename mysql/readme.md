@@ -32,7 +32,7 @@ If you want to use a different path, please modify vars in `mysql_install.yml` b
 
 Plase note this playbook only support MySQL version 5.6+ or 5.7+.
 
-### install mysql instance
+### Install instance
 
 please modify default password in `inventory.ini` before install, and run this command below:
 ```console
