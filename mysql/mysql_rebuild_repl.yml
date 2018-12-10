@@ -29,7 +29,8 @@
         config_file: "{{ config_file }}"
 
     - name: change master auto postion 0
-      mysql_repl:
+      # use a custom module see modules/custom_mysql_replication.py
+      custom_mysql_replication:
         mode: changemaster
         login_user: root
         login_password: "{{ mysql_password }}"
